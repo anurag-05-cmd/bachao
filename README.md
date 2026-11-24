@@ -1,127 +1,153 @@
 # Bachao
 
-Bachao turns a syllabus into a study pack that fits the time left before an exam. Open the study desk for the next topic, a reason to start there and a time budget. Add notes to ground the explanations and previous-year papers to see which skills recur.
+Before a DBMS exam, it’s possible to have the syllabus, a folder of notes and years of question papers, and still spend the first hour deciding where to start. **Bachao gives you a first study block** with a topic, a reason to study it and a time budget. Change the time available and the same pack becomes a different plan.
 
-The first launch opens a clearly labelled, pre-generated DBMS sample. **Add materials** opens the live upload workspace. A failed analysis keeps your materials available for retry.
+Bachao is a free exam-prep app that runs on your PC. You can try the complete study flow with the built-in DBMS sample, then use a local model to build a pack for your own subject. There’s no account, API key or subscription.
 
-## Windows setup
+[Quick start](#quick-start-on-windows) · [Bring your own materials](#bring-your-own-materials) · [Study plans](#how-the-plan-changes) · [Practice papers](#past-papers-and-the-expected-paper) · [Troubleshooting](#troubleshooting) · [Development](#development-and-checks)
 
-Use Windows 11, Node.js 22.14 or later and a current Edge or Chrome browser. These PowerShell commands use the existing project folder.
+![Bachao’s DBMS sample showing a 25-minute normalization block, its evidence from two past papers and the switch from a daily plan to 90 minutes.](docs/images/dbms-study-desk.png)
 
-If Node is missing, install it and reopen PowerShell:
+## Quick start on Windows
 
-```powershell
-winget install --id OpenJS.NodeJS.LTS --exact
-```
+**To try the sample**, you need Windows, Node.js 22.14 or later, and a current Edge or Chrome browser. The commands below use PowerShell and Git. If you downloaded the repository as a ZIP or already have a checkout, open PowerShell in the folder containing `package.json` and start at step 2.
 
-Before a clean install, stop any running Bachao preview or dev server with Ctrl+C. On Windows it can hold Rollup’s native module open and cause npm to report EPERM. Then install the dependencies and launch the production build:
+1. Get the project.
 
-```powershell
-Set-Location 'D:\internships\OpenAI\Bachao'
-npm.cmd ci
-npm.cmd run build
-npm.cmd start
-```
+   ```powershell
+   git clone https://github.com/anurag-05-cmd/bachao.git
+   cd bachao
+   ```
 
-Open [the local study desk](http://127.0.0.1:5173). For later launches, run `npm.cmd start` from the same folder. Use Ctrl+C to stop the server. For development, `npm.cmd run dev` serves the same app and API on that port. Run one server at a time.
+2. Install the locked dependencies, build the app and start it.
 
-### Enable generation from your materials
+   ```powershell
+   npm.cmd ci
+   npm.cmd run build
+   npm.cmd start
+   ```
 
-The sample works immediately. To analyse uploads, install Ollama and download the default model once. In PowerShell:
+3. Open **http://127.0.0.1:5173**. On first launch you’ll see **Pre-generated sample** above the DBMS desk. Select **Start studying** to open the normalization notebook, or **90 min** to see what you could cover this evening.
+
+Keep PowerShell open while studying. Press `Ctrl+C` to stop Bachao. For your next session, run `npm.cmd start` from the project folder and open the same address in the same browser profile. If you need Node.js, install it with `winget install --id OpenJS.NodeJS.LTS --exact` and reopen PowerShell.
+
+### Enable generation for your own subject
+
+Install Ollama on the same PC with the following PowerShell command or the official Windows installer. [Ollama for Windows](https://docs.ollama.com/windows)
 
 ```powershell
 winget install --id Ollama.Ollama --exact
 ```
 
-Open Ollama from the Start menu. In a fresh PowerShell window:
+Open Ollama from the Start menu. In a fresh PowerShell window, download the default model and check that its name appears in the list. The download is about 2.5 GB. [Qwen model details](https://ollama.com/library/qwen3:4b-instruct)
 
 ```powershell
 ollama pull qwen3:4b-instruct
 ollama list
 ```
 
-If the background runtime is stopped, run `ollama serve` in its own terminal. The app contacts `127.0.0.1:11434`. Change **Materials → Local Ollama model** to the name of another locally installed instruction model if needed. The default download is approximately 2.5 GB. [Ollama for Windows](https://docs.ollama.com/windows) · [Qwen model entry](https://ollama.com/library/qwen3:4b-instruct)
+If the runtime is installed but stopped, run `ollama serve` in a separate terminal. To try a different installed model, enter its exact name under **Materials → Local Ollama model**.
 
-Bachao targets CPU inference on the i5-13500H / 16 GB laptop. The initial request uses a compact map of up to six topics. It sends up to five syllabus pages, three notes pages and two paper pages, with the first 1,100 characters from each. **Materials → Saved study packs → Analysis coverage** lists the exact excerpts considered. To focus on material outside that window, paste the relevant unit as the syllabus for a new pack. Tests, historical analysis and practice-paper writing run on demand. Successful steps are cached.
+## Bring your own materials
 
-## Study from your own material
+Open **Add materials** from the desk. Each category accepts selectable-text PDFs and pasted text. A syllabus is enough to begin.
 
-1. Open **Add materials**. Choose PDFs or expand **Paste text** under each source category. A syllabus is sufficient. Include a source name when pasting individual pages.
-2. Open a source in **Source pages** to check its extracted text and page numbers. Scans, blank pages or unreadable files may need a pasted transcription. Each individual PDF can be up to 50 MB.
-3. Enter the exam date and actual minutes available per day. Choose **Build my study pack**. The daily plan counts today and the exam date as available study days.
-4. Open **Start studying** for short notes, a worked example, important points and an exam-answer outline. The optional **Watch** link opens a labelled YouTube search.
-5. Use **Test Me** for a three-question Quick Check or a five-question Topic Test. Thin sources may support fewer questions. The app scores MCQs and records your self-check against marking points for written answers. Retry the missed items. The next recommendation can bring forward an available revision slot.
-6. Use **90 min** to concentrate on up to two topics, shorter checks and revision. Read the deferred topics below the plan. **Daily plan** restores the date-based schedule. Both switches use saved topics and perform no inference.
+| Material | What it contributes | How to add it |
+| --- | --- | --- |
+| **Syllabus** | Topics to study and the scope of the pack. Every generated topic needs a syllabus citation. | Upload the syllabus or paste the relevant unit with the subject name. |
+| **Notes & slides** | Explanations, examples and evidence for test questions. | Add one or more handouts, or paste a named excerpt. |
+| **Previous-year papers (PYQs)** | Historical questions, recurring skills and evidence for a practice paper. | Add each paper as a separate file or paste entry. Keep visible years, marks and section instructions. |
 
-## Previous-year papers
+1. Expand a filename under **Source pages**. Check how many pages were read and whether the extracted text makes sense. Each PDF can be up to 50 MB. For scans or equations that extracted poorly, use **Paste text** and include the original filename and page number in the source name. Pasted text becomes one source page.
+2. Enter the **exam date** and **study minutes per day** you can actually spare. Select **Build my study pack**. If analysis fails, the error appears beside **Retry analysis** and the draft stays available.
+3. On the desk, follow **Start here**. For a claim you want to check, open **Source evidence** in the topic notebook, select the citation and choose **Read source page**.
 
-**PYQ insights** processes paper excerpts locally and saves each completed batch. Open a skill to read its verified historical questions, source pages and known metadata. Counts use distinct paper fingerprints. Renamed copies with the same normalized extracted text count once. Keep each paper in its own file or paste entry.
+**What gets read?** PDF extraction runs page by page. The first model request uses up to 1,100 characters from each of the first five readable syllabus pages, three notes pages and two paper pages. It builds up to six topics. **Materials → Saved study packs → Analysis coverage** shows which pages and how much text went into that first pass. For a unit deep in a long booklet, paste that unit as the syllabus for a new pack.
 
-**Expected paper** generates a **PYQ-based practice paper** with a marking guide. The format check requires at least two distinct papers with the same explicit section order, question counts, choices and marks. It understands labelled sections, instructions such as “Answer one of two” and numbered question lines ending in marks. Complex or inconsistent layouts produce a practice set. Generated questions are labelled separately from the historical quotations. This exercise makes no prediction about the next exam.
+## How the plan changes
 
-## DBMS recording sequence
+Bachao schedules study, practice and revision in code. Switching plans uses saved topics and makes no model request. Here’s how the six-topic DBMS sample uses each budget.
 
-Make four selectable-text PDFs in the ignored `.cache/reel` folder. These are original synthetic DBMS sources. This command runs locally and requires no model.
+| | Daily plan with 10 available study dates | 90-minute session |
+| --- | --- | --- |
+| First action | Study relational normalization for 25 minutes with a worked example. | Read compact normalization notes for 18 minutes. Expand the example if needed. |
+| Practice | A five-question Topic Test is the suggested check. | A three-question Quick Check is the suggested check. |
+| Coverage | Study, practice and revisit all six topics across the available dates. | Cover two topics in 66 scheduled minutes. The desk names the four deferred topics. |
 
-```powershell
-Set-Location 'D:\internships\OpenAI\Bachao'
-npm.cmd run demo:files
-```
+The daily plan counts **today and exam day**. An exam tomorrow gives you two available dates. At 45 minutes per day that’s 90 minutes total, which also activates compact study. The separate **90 min** switch puts the work into one session. A time budget is a ceiling, so a plan can finish with minutes to spare.
 
-1. Open **Add materials**. Upload the synthetic syllabus under **Syllabus**, the six-page revision notes under **Notes & slides**, and both exam PDFs under **Previous-year papers**. Open a source to show the extracted page. **Build my study pack** runs the separate live Ollama path.
-2. For the repeatable offline take, choose **Start fresh recording sample**. The **Pre-generated sample** label stays visible as you scroll. The recording sample and uploaded draft have independent histories. Starting another take resets only the recording sample after confirmation.
-3. Show **Start here** on the ten-day desk. Normalization starts with a 25-minute block, a worked example and a five-question Topic Test. Select **90 min**. The first block becomes 18 minutes of compact notes with a three-question Quick Check. The sprint schedules 66 minutes across two topics and defers four.
-4. Choose **Read compact notes → Jump to Test Me → Quick Check · 3**. Select **Make building part of every key** for the first question and **A room determines its building** for the second. Write the Booking and Room relations for the third. Submit and compare the written answer with the marking points. The first answer’s feedback explains why changing the key still repeats the building.
-5. **Retry missed questions (1)** opens just that item. For the reel, select **Show my next block** before correcting it. The desk brings forward an eight-minute revision block with the missed concept. Reloading restores the pack and results.
-6. Open **PYQ insights → Decompose a relation using dependencies** and select **Read source page** for the 2023 question. The original page highlights its exact wording. The card also shows the 2024 paraphrase and counts two distinct papers.
-7. To show the practice paper, open **Expected paper → Generate practice paper**. Section A offers two 5-mark questions with one required. Section B requires one 8-mark question. The attempted total is 13. Open a generated question’s marking guide.
+### Inside a topic
 
-## Local data and troubleshooting
+- **Short Notes** and **Important Points** explain the concept. The worked example shows it in use, and **In the exam** outlines a written answer. **Watch** opens a YouTube search for the subject and topic in a new tab.
+- **Test Me** offers up to three questions in a Quick Check or five in a Topic Test, depending on the source material. Bachao scores multiple-choice answers immediately. For a written answer, compare it with the marking points and choose **Met the marking points** or **Needs review**.
+- After a miss, read the explanation and its source. **Retry missed questions** gives you just those items. **Show my next block** brings forward a revision block for that topic when one fits the plan. Completed tasks and submitted attempts survive a reload.
 
-The browser saves source files, extracted pages, settings, packs, quizzes and results in IndexedDB for this browser profile and origin. Use the same browser and the same loopback URL when returning. **Delete pack** removes that saved pack and its test history. The draft stays available for another analysis. **Materials → Delete all local study data** clears the saved workspace after confirmation. Originals at their existing filesystem locations remain yours. Built assets, PDF worker, icons and typography all work locally. The YouTube link is the optional online feature.
+## Past papers and the expected paper
 
-| What you see | What to do |
+**PYQ insights** groups questions by the skill they test. Two differently worded questions asking you to decompose a relation can count toward the same skill. Identifying a key in that relation tests a different skill. Open **Read source page** to see the historical wording highlighted in context. Bachao checks the quote against the extracted text and counts distinct papers. Renamed copies with identical normalized text count once. Ambiguous years and missing marks appear as unknown.
+
+**Expected paper** builds a **PYQ-based practice paper** with original questions and marking guides. It can reproduce sections, marks and choices when at least two distinct papers show a consistent, readable structure. In the DBMS sample you attempt one of two 5-mark questions and one required 8-mark question, for **13 marks**. If the sources leave the format unclear, you get a practice set covering the verified skills. Historical frequency describes the papers you supplied. It cannot predict the next exam.
+
+## What stays on your PC
+
+PDF.js extracts text in the browser. When you ask for new material, Bachao’s local Node endpoint sends excerpts to Ollama at `127.0.0.1:11434`. Uploaded text is treated as study material. The server validates the response format, checks references against source pages and rejects invalid results. A matching citation confirms where an excerpt came from. Check the cited page when evaluating a generated explanation or answer key.
+
+| When you do this | What happens |
 | --- | --- |
-| Cannot reach Ollama | Start the Windows Ollama app, or run `ollama serve`, then retry the same step. |
-| Model missing | Run `ollama list`, pull the selected model or enter an installed model name. |
-| Timeout, invalid JSON or unverified excerpt | Retry with a shorter relevant syllabus or clearer pasted text. Each model request has a four-minute timeout. Completed historical batches and practice questions remain available. |
-| A PDF page has no readable text | Paste the page transcription and include its filename and page number in the source name. v1 extracts existing text. |
-| Empty saved workspace | Check the browser profile and origin. Browser data clearing and private browsing affect IndexedDB. |
-| Port 5173 is in use | Stop the earlier Bachao server with Ctrl+C and relaunch. |
+| Build a pack with a new set of materials or a different model | Ollama generates a compact topic map. A successful pack is cached for that combination of model and sources. |
+| First request a topic test, analyse paper excerpts or generate a practice paper | The app prepares the requested material on demand and saves successful results. Completed paper excerpts and practice questions can be reused after a retry. |
+| Reopen a saved pack, change your time budget, score an answer or retry missed items | The browser uses saved data and local calculations. |
 
-## Verification
+IndexedDB stores the uploaded PDFs, extracted text, packs, settings and quiz progress in the browser profile for the address you used. **Delete pack** removes the chosen pack and its attempts while keeping the upload draft. **Delete all local study data** also clears drafts and uploaded copies after confirmation. Your original files stay in their folders. After dependencies and model weights are installed, the core study flow works offline. Opening a YouTube search uses the internet.
 
-From this checkout:
+## Repeat the DBMS walkthrough
 
-```powershell
-npm.cmd test
-npm.cmd run build
-npm.cmd run test:browser
-npm.cmd run test:upload
-npm.cmd run test:reel
-```
+From the project folder, run `npm.cmd run demo:files` to create four original synthetic PDFs in `.cache/reel/`. These files let anyone demonstrate uploading materials without using personal notes or real exam papers.
 
-The browser check starts a separate temporary loopback server for the production bundle and opens headless Edge in an isolated profile. For installed Google Chrome, set `$env:BACHAO_BROWSER='chrome'`.
+1. In **Materials**, upload the syllabus, notes and two papers in their matching fields. Expand a filename to show a page. **Build my study pack** takes these inputs through live Ollama generation. For the repeatable offline demo, choose **Start fresh recording sample**.
+2. Show normalization on the ten-day desk, select **90 min**, then open **Read compact notes → Jump to Test Me → Quick Check · 3**.
+3. Pick **Make building part of every key** for the first question and **A room determines its building** for the second. Write the Booking and Room relations for the third. Submit, check the written answer, then select **Show my next block**. The desk gives you an eight-minute revision block for the missed concept.
+4. Open **PYQ insights → Decompose a relation using dependencies → Read source page**. Compare the highlighted 2023 question with the 2024 paraphrase. Finish in **Expected paper → Generate practice paper** and reveal a marking guide.
 
-The native Windows 11 Home verification used Node 22.14.0 and headless Edge. A clean installation, production build and 18 automated tests passed. The tests covered page extraction, unreadable pages, distinct-paper counts, separate skills within a topic, priority switching, quiz keys and the arithmetic of paper choices. Contradictory totals and unequal-mark alternatives produced a practice set.
+The **Pre-generated sample** label identifies this walkthrough throughout. Starting a fresh recording sample again resets its history after confirmation and keeps the uploaded draft.
 
-`test:upload` used real PDF.js extraction with four synthetic DBMS files, including two distinct past papers. It added a renamed duplicate, rejected an invalid PDF, exercised syllabus-only generation, restored state after reload and deleted one pack while retaining another. Missing-model, malformed-output and successful retry responses used a simulated Ollama transport with the production validator. The separate browser suite also tested pasted notes and the pre-generated sample.
+## Troubleshooting
 
-`test:reel` generated the four PDFs, uploaded them from disk and ran the recording sequence in a 390 × 844 viewport. It confirmed zero inference requests and verified the highlighted source text. Desktop checks used 1280 × 880. To save local screenshots of synthetic data, set `$env:BACHAO_CAPTURE='1'` before the browser and reel checks. They write to the ignored `.cache/qa` directory.
+| Symptom | What to try |
+| --- | --- |
+| `npm.cmd ci` reports `EPERM` on Windows | Stop any running Bachao dev or preview server with `Ctrl+C`, then retry the install. |
+| Port 5173 is in use | Use the existing Bachao window or stop the previous server before starting another. |
+| **Cannot reach Ollama** or **Model missing** | Start Ollama, run `ollama list`, and compare the installed name with the model field. Pull the model if needed, then retry. |
+| Analysis times out or a source reference fails validation | Each model request has a four-minute limit. Narrow the syllabus to one named unit with clear source text and retry. |
+| A scanned paper has empty pages | Bachao reads existing PDF text. Paste a checked transcription of the questions and identify the source pages. |
+| A saved pack seems to have disappeared | Reopen the same browser profile and address. Using `localhost` in place of `127.0.0.1`, switching ports, or clearing browser storage changes which workspace you see. |
 
-To include a genuine four-file inference attempt in the upload check, set `$env:BACHAO_TRY_LIVE='1'` before running `npm.cmd run test:upload`. It reports elapsed time to the first study block on success, or the actual runtime error. On this host the genuine request reached Bachao and returned **Cannot reach Ollama**. No runtime was listening on port 11434. There is no measured inference time or real-model quality result for this run.
+## Development and checks
 
-To run the real inference check, start Bachao and Ollama, install the model and run the following in another terminal:
+Use `npm.cmd run dev` for the development server. Both development and production preview serve the app and its local API on port 5173. For browser checks, build the production bundle first. Each check starts a temporary local server and uses an isolated browser profile.
 
-```powershell
-Set-Location 'D:\internships\OpenAI\Bachao'
-npm.cmd run test:ollama
-```
+| Command | What it exercises |
+| --- | --- |
+| `npm.cmd test` | Page extraction, scheduling, scoring, source verification, duplicate papers and marks arithmetic. |
+| `npm.cmd run build` | Production frontend and bundled PDF worker. |
+| `npm.cmd run test:browser` | Desktop and portrait UI, sample, retry, persistence, deletion and offline requests. |
+| `npm.cmd run test:upload` | Four synthetic PDFs through real extraction, plus reproducible model-error and recovery fixtures. |
+| `npm.cmd run test:reel` | The portrait DBMS sequence from upload to missed answer and highlighted historical source, with zero inference requests. |
+| `npm.cmd run test:ollama` | A genuine syllabus-only request through the running app. Start Bachao and Ollama and install the model first. |
 
-This sends a tiny original syllabus through the running app and validates the returned topic references. Set `$env:BACHAO_MODEL` to test another installed model. The independent syllabus-only live check also reported the unavailable runtime. CPU performance on the target Vivobook remains unverified.
+The checks use installed Edge by default. In PowerShell, set `$env:BACHAO_BROWSER='chrome'` to use installed Chrome, or `$env:BACHAO_CAPTURE='1'` to save synthetic screenshots from the browser and reel checks in `.cache/qa/`. Set `$env:BACHAO_TRY_LIVE='1'` for a real-model attempt during the upload check, or `$env:BACHAO_MODEL` to select another installed model for `test:ollama`.
 
-## Implementation references
+**Observed CPU performance.** On a Windows 11 laptop with an i5-13500H and 16 GB RAM, the default model produced a first study block on *Spectra of Sampled Signals* in 90 seconds from a short, subject-labelled syllabus excerpt. A broader Signals and Systems request hit the four-minute timeout, and a shorter retry failed syllabus-citation validation. The corresponding feature walkthrough used a reviewed, prepared pack and showed the successful live excerpt separately. Input size and subject context both mattered in these runs.
 
-- PDF.js supplies the bundled PDF parser and worker under Apache-2.0. [Repository and license](https://github.com/mozilla/pdf.js) · [Official examples](https://mozilla.github.io/pdf.js/examples/)
-- Ollama is MIT licensed. Bachao uses its loopback HTTP API with JSON Schema and validates results in Node. [Repository and license](https://github.com/ollama/ollama) · [Structured outputs](https://docs.ollama.com/capabilities/structured-outputs)
-- StudyAgent was reviewed for its notes-to-quiz and missed-answer flow, and StudyForge for source-grounded review. Neither inspected repository displayed a license. Bachao’s implementation, interface, examples and questions were written independently. [StudyAgent](https://github.com/whatincode/StudyAgent) · [StudyForge](https://github.com/Sccaryboi1999/StudyForge)
+### Where the code lives
+
+| Part | Entry point |
+| --- | --- |
+| React screens, uploads and saved packs | [Workspace](src/Workspace.jsx) · [Materials](src/Materials.jsx) · [IndexedDB storage](src/db.js) |
+| PDF extraction and document fingerprints | [PDF reader](src/pdf.js) · [Materials processing](src/materials.js) |
+| Scheduling, quiz scoring and revision | [Study planner](src/study.js) · [Quiz logic](src/quiz.js) |
+| Distinct-paper counts and practice-paper format | [Historical evidence](src/history.js) · [Paper views](src/Papers.jsx) |
+| Loopback API, Ollama requests and Zod validation | [Vite integration](vite.config.js) · [Local API](server/local.js) · [Response contracts](shared/contracts.js) |
+| Reproducible examples and verification | [DBMS sample](src/sample.js) · [Unit tests](tests/) · [Browser checks](checks/) |
+
+Bachao uses Mozilla’s Apache-2.0-licensed PDF.js and Ollama’s MIT-licensed runtime. StudyAgent and StudyForge were reviewed for notes-to-quiz and review interface ideas. Bachao’s interface, fixtures and questions were written for this project. [PDF.js](https://github.com/mozilla/pdf.js) · [Ollama](https://github.com/ollama/ollama) · [StudyAgent](https://github.com/whatincode/StudyAgent) · [StudyForge](https://github.com/Sccaryboi1999/StudyForge)
