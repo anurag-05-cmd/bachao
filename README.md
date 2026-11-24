@@ -14,7 +14,7 @@ If Node is missing, install it and reopen PowerShell:
 winget install --id OpenJS.NodeJS.LTS --exact
 ```
 
-Install the dependencies and launch the production build:
+Before a clean install, stop any running Bachao preview or dev server with Ctrl+C. On Windows it can hold Rollup’s native module open and cause npm to report EPERM. Then install the dependencies and launch the production build:
 
 ```powershell
 Set-Location 'D:\internships\OpenAI\Bachao'
@@ -61,15 +61,24 @@ Bachao targets CPU inference on the i5-13500H / 16 GB laptop. The initial reques
 
 ## DBMS recording sequence
 
-1. Open **Materials → Open sample**. Show the pre-generated label and the synthetic syllabus, notes and two past papers through the topic evidence and PYQ views.
-2. On **Study desk**, show the ten-day plan, the first normalization session and its duration. Switch to **90 min** and show the shorter plan and four deferred topics.
-3. Choose **Start studying → Quick Check**. Miss one MCQ, submit, self-check the written response and open **Retry missed questions**. Return to the desk to see the revision recommendation. Reload to show saved progress.
-4. Open **PYQ insights**. Compare differently worded questions grouped under one skill and open a source page.
-5. Open **Expected paper → Generate practice paper**. Show the section choices, generated-question labels and a marking guide.
+Make four selectable-text PDFs in the ignored `.cache/reel` folder. These are original synthetic DBMS sources. This command runs locally and requires no model.
+
+```powershell
+Set-Location 'D:\internships\OpenAI\Bachao'
+npm.cmd run demo:files
+```
+
+1. Open **Add materials**. Upload the synthetic syllabus under **Syllabus**, the six-page revision notes under **Notes & slides**, and both exam PDFs under **Previous-year papers**. Open a source to show the extracted page. **Build my study pack** runs the separate live Ollama path.
+2. For the repeatable offline take, choose **Start fresh recording sample**. The **Pre-generated sample** label stays visible as you scroll. The recording sample and uploaded draft have independent histories. Starting another take resets only the recording sample after confirmation.
+3. Show **Start here** on the ten-day desk. Normalization starts with a 25-minute block, a worked example and a five-question Topic Test. Select **90 min**. The first block becomes 18 minutes of compact notes with a three-question Quick Check. The sprint schedules 66 minutes across two topics and defers four.
+4. Choose **Read compact notes → Jump to Test Me → Quick Check · 3**. Select **Make building part of every key** for the first question and **A room determines its building** for the second. Write the Booking and Room relations for the third. Submit and compare the written answer with the marking points. The first answer’s feedback explains why changing the key still repeats the building.
+5. **Retry missed questions (1)** opens just that item. For the reel, select **Show my next block** before correcting it. The desk brings forward an eight-minute revision block with the missed concept. Reloading restores the pack and results.
+6. Open **PYQ insights → Decompose a relation using dependencies** and select **Read source page** for the 2023 question. The original page highlights its exact wording. The card also shows the 2024 paraphrase and counts two distinct papers.
+7. To show the practice paper, open **Expected paper → Generate practice paper**. Section A offers two 5-mark questions with one required. Section B requires one 8-mark question. The attempted total is 13. Open a generated question’s marking guide.
 
 ## Local data and troubleshooting
 
-The browser saves source files, extracted pages, settings, packs, quizzes and results in IndexedDB for this browser profile and origin. Use the same browser and the same loopback URL when returning. **Materials → Delete all local study data** clears the saved workspace after confirmation. Originals at their existing filesystem locations remain yours. Built assets, PDF worker, icons and typography all work locally. The YouTube link is the optional online feature.
+The browser saves source files, extracted pages, settings, packs, quizzes and results in IndexedDB for this browser profile and origin. Use the same browser and the same loopback URL when returning. **Delete pack** removes that saved pack and its test history. The draft stays available for another analysis. **Materials → Delete all local study data** clears the saved workspace after confirmation. Originals at their existing filesystem locations remain yours. Built assets, PDF worker, icons and typography all work locally. The YouTube link is the optional online feature.
 
 | What you see | What to do |
 | --- | --- |
@@ -88,13 +97,19 @@ From this checkout:
 npm.cmd test
 npm.cmd run build
 npm.cmd run test:browser
+npm.cmd run test:upload
+npm.cmd run test:reel
 ```
 
 The browser check starts a separate temporary loopback server for the production bundle and opens headless Edge in an isolated profile. For installed Google Chrome, set `$env:BACHAO_BROWSER='chrome'`.
 
-The Windows verification run used Node 22.14.0. A clean `npm.cmd ci`, the production build and 14 automated tests passed. Coverage includes real PDF.js extraction of a generated two-page PDF, blank-page recovery, deduplication, source validation, daily and sprint budgets, quiz scoring, targeted revision, historical quotes, unknown marks and inconsistent paper formats.
+The native Windows 11 Home verification used Node 22.14.0 and headless Edge. A clean installation, production build and 18 automated tests passed. The tests covered page extraction, unreadable pages, distinct-paper counts, separate skills within a topic, priority switching, quiz keys and the arithmetic of paper choices. Contradictory totals and unequal-mark alternatives produced a practice set.
 
-The production Edge check exercised PDF upload and pasted text, a 390-pixel portrait viewport, saved quiz results across reload, historical evidence, section choices and marking guides, error recovery, pack caching and deletion. It observed no external HTTP requests from the page. The successful upload-generation fixture in this test supplies a simulated model response.
+`test:upload` used real PDF.js extraction with four synthetic DBMS files, including two distinct past papers. It added a renamed duplicate, rejected an invalid PDF, exercised syllabus-only generation, restored state after reload and deleted one pack while retaining another. Missing-model, malformed-output and successful retry responses used a simulated Ollama transport with the production validator. The separate browser suite also tested pasted notes and the pre-generated sample.
+
+`test:reel` generated the four PDFs, uploaded them from disk and ran the recording sequence in a 390 × 844 viewport. It confirmed zero inference requests and verified the highlighted source text. Desktop checks used 1280 × 880. To save local screenshots of synthetic data, set `$env:BACHAO_CAPTURE='1'` before the browser and reel checks. They write to the ignored `.cache/qa` directory.
+
+To include a genuine four-file inference attempt in the upload check, set `$env:BACHAO_TRY_LIVE='1'` before running `npm.cmd run test:upload`. It reports elapsed time to the first study block on success, or the actual runtime error. On this host the genuine request reached Bachao and returned **Cannot reach Ollama**. No runtime was listening on port 11434. There is no measured inference time or real-model quality result for this run.
 
 To run the real inference check, start Bachao and Ollama, install the model and run the following in another terminal:
 
@@ -103,7 +118,7 @@ Set-Location 'D:\internships\OpenAI\Bachao'
 npm.cmd run test:ollama
 ```
 
-This sends a tiny original syllabus through the running app and validates the returned topic references. Set `$env:BACHAO_MODEL` to test another installed model. The running production app returned HTTP 200. The real smoke check returned “Cannot reach Ollama” because no runtime was listening on port 11434. Real-model output quality, end-to-end inference time and performance on the target Vivobook remain unverified.
+This sends a tiny original syllabus through the running app and validates the returned topic references. Set `$env:BACHAO_MODEL` to test another installed model. The independent syllabus-only live check also reported the unavailable runtime. CPU performance on the target Vivobook remains unverified.
 
 ## Implementation references
 
