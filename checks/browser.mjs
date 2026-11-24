@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import {chromium} from 'playwright-core'
+import {testBrowser} from './edge.mjs'
 import {preview} from 'vite'
 import {mkdir} from 'node:fs/promises'
 import {syntheticPdf} from '../tests/fixtures/pdf.js'
@@ -11,8 +11,8 @@ try {
  const invalid=await fetch(new URL('/api/generate',url),{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
  assert.equal(invalid.status,400)
  assert.match((await invalid.json()).error,/Invalid study request/)
- browser=await chromium.launch({channel:process.env.BACHAO_BROWSER || 'msedge',headless:true})
- const page=await browser.newPage({viewport:{width:1280,height:880}})
+ browser=await testBrowser({width:1280,height:880})
+ const page=await browser.newPage()
  const errors=[],external=[]
  page.on('pageerror',e=>errors.push(e.message))
  page.on('request',r=>{if(!r.url().startsWith(url)&&/^https?:/.test(r.url()))external.push(r.url())})

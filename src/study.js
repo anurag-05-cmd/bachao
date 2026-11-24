@@ -49,8 +49,14 @@ export function schedule(pack,settings,today=dateString()) {
   return {sessions,deferred,compact}
 }
 export async function requestStudy(task,pages,model,context='') {
-  const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,pages,model,context})})
-  const json=await res.json()
+  let res
+  try {res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,pages,model,context})})} catch {
+    throw new Error('Connection to Bachao was interrupted. Restart the local app and retry this step.')
+  }
+  let json
+  try {json=await res.json()} catch {
+    throw new Error('The local server returned an unreadable response. Restart Bachao and retry.')
+  }
   if(!res.ok) throw new Error(json.error || 'Local processing failed. Retry this step.')
   return json
 }
