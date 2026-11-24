@@ -15,7 +15,8 @@
     "lucide-react": "0.468.0",
     "pdfjs-dist": "^4.10.38",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "zod": "^4.1.0"
   },
   "devDependencies": {
     "vite": "^7.3.0"
