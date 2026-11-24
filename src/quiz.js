@@ -20,7 +20,11 @@ export function nextAction(plan,pack) {
  const last=pack.attempts.at(-1)
  if(last?.results.some(r=>r.correct===false)) {
    const review=pending.find(s=>s.topic===last.topic && s.kind==='Revise')
-   if(review)return {...review,reason:'Your last check flagged this topic. Use this scheduled revision slot to revisit the missed points.'}
+   if(review){
+     const missed=last.results.find(r=>r.correct===false)
+     const question=last.items?.find(q=>q.id===missed.id)
+     return {...review,reason:'Your last check flagged this topic. '+(question?.explanation || 'Revisit the missed marking points.')}
+   }
  }
  return pending[0]
 }

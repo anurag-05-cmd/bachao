@@ -39,5 +39,24 @@ const banks=[
  ]
 ]
 export function sampleQuiz(topic) {
- return banks[Number(topic.id.slice(1))].map(([prompt,options,answer,guide],i)=>({id:'q'+i,prompt,options,answer,kind:options.length?'mcq':'short',explanation:guide.split('|').join(' '),points:guide.split('|'),refs:topic.refs.filter(r=>r.page.startsWith('n:'))}))
+ const index=Number(topic.id.slice(1))
+ const notePage=topic.refs.find(r=>r.page.startsWith('n:')).page
+ const {notes,example,points,outline}=topic
+ const evidence=[
+   [example,notes,example,example,points[1]],
+   [example,points[1],notes,notes,example],
+   [notes,example,example,points[1],notes],
+   [notes,example,outline,points[1],notes],
+   [example,points[1],example,notes,points[1]],
+   [example,notes,example,example,outline]
+ ][index]
+ return banks[index].map(([prompt,options,answer,guide],i)=>({
+   id:'q'+i,prompt,options,answer,kind:options.length?'mcq':'short',
+   explanation:guide.split('|').join(' '),points:guide.split('|'),
+   refs:[{page:notePage,quote:evidence[i]}],
+   ...(index===0 && i===0?{distractors:{
+     0:'Adding building to the booking key still repeats it on every booking for that room.',
+     2:'Dropping bookingID loses the booking identifier and leaves the room-to-building dependency in place.'
+   }}:{})
+ }))
 }

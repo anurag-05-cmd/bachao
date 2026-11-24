@@ -50,7 +50,14 @@ function sectionLayout(doc) {
  if(doc.pages.some(p=>!p.text || p.issue))return null
  const lines=doc.pages.flatMap(p=>p.text.split(/\r?\n/)).map(s=>s.trim()).filter(Boolean)
  const sections=[]
+ let declaredTotal=null
  for(const line of lines) {
+   const total=line.match(/^(?:total|max(?:imum)?)\s+marks\s*[:=-]?\s*(\d+)\s*$/i)
+   if(total){
+     if(declaredTotal!==null && declaredTotal!==Number(total[1]))return null
+     declaredTotal=Number(total[1])
+     continue
+   }
    const header=line.match(/^section\s+([a-z0-9]+)\s*[:.\-–—]?\s*(.*)$/i)
    if(header)sections.push({name:'Section '+header[1].toUpperCase(),take:null,count:null,marks:[]})
    const section=sections.at(-1)
@@ -64,7 +71,14 @@ function sectionLayout(doc) {
    section.marks.push(Number(q[1]))
  }
  if(!sections.length||sections.some(s=>!s.take||!s.marks.length||s.marks.some(n=>n<=0)||s.take>s.marks.length||(s.count&&s.count!==s.marks.length)))return null
- return sections.map(s=>({name:s.name,take:s.take==='all'?s.marks.length:s.take,marks:s.marks}))
+ const layout=sections.map(s=>({name:s.name,take:s.take==='all'?s.marks.length:s.take,marks:s.marks}))
+ if(new Set(layout.map(s=>s.name)).size!==layout.length)return null
+ if(layout.some(s=>s.take<s.marks.length && new Set(s.marks).size>1))return null
+ if(declaredTotal!==null && totalMarks(layout)!==declaredTotal)return null
+ return layout
+}
+export function totalMarks(sections) {
+ return sections.reduce((total,section)=>total+section.marks.slice(0,section.take).reduce((sum,mark)=>sum+mark,0),0)
 }
 export function consistentLayout(pack) {
  const papers=[...new Map(pack.docs.filter(d=>d.kind==='pyq').map(d=>[d.fingerprint||d.id,d])).values()]
