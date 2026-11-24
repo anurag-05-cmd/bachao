@@ -53,7 +53,7 @@ try {
  const historical=page.locator('.reading section').first().locator('.response').first()
  const quote=await historical.locator('blockquote').first().innerText()
  await historical.locator('summary').first().click()
- await historical.getByText('Read source page',{exact:true}).click()
+ assert.equal(await historical.locator('mark').innerText(),quote)
  assert.ok((await historical.locator('pre').innerText()).includes(quote))
  await page.getByRole('button',{name:'Expected paper',exact:true}).click()
  await page.getByText(/13 marks to attempt across 2 sections/).waitFor()
