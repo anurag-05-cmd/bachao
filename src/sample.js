@@ -1,3 +1,4 @@
+import {sampleHistory} from './samplePapers.js'
 import {initialSettings} from './study.js'
 const lessons=[
  ['Relational normalization','Remove repeated facts by storing each dependency in the relation it describes. A functional dependency X → Y means that a value of X determines one value of Y.',['Identify a candidate key before testing normal forms.','In 3NF, each nontrivial dependency has a superkey on the left or a prime attribute on the right.'],'In Booking(bookingID, roomID, building), bookingID determines roomID and roomID determines building. Split out Room(roomID, building) so each room’s building is stored once.','State the key, list the dependencies, identify the violation and show the resulting relations.'],
@@ -10,5 +11,11 @@ const lessons=[
 export function samplePack(){
  const docs=[{id:'s',kind:'syllabus',name:'DBMS syllabus · synthetic',pages:[{number:1,text:lessons.map(l=>l[0]).join('\n')}]},{id:'n',kind:'notes',name:'DBMS revision notes · synthetic',pages:lessons.map((l,i)=>({number:i+1,text:[l[0],l[1],...l[2],l[3],l[4]].join('\n')}))}]
  const topics=lessons.map(([title,notes,points,example,outline],i)=>({id:'t'+i,title,notes,points,example,outline,refs:[{page:'s:1',quote:title},{page:'n:'+(i+1),quote:notes}]}))
- return {id:'dbms-sample',subject:'Database Management Systems',sample:true,docs,topics,settings:initialSettings(),covered:[],done:[],attempts:[]}
+ const papers=sampleHistory()
+ docs.push(...papers.docs)
+ const examples=Object.values(papers.history)
+ for(let i=0;i<3;i++) {
+   for(const entries of examples) topics[i].refs.push({page:entries[i].page,quote:entries[i].quote})
+ }
+ return {history:papers.history,id:'dbms-sample',subject:'Database Management Systems',sample:true,docs,topics,settings:initialSettings(),covered:[],done:[],attempts:[]}
 }

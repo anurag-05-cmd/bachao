@@ -5,7 +5,7 @@ export const defaultModel='qwen3:4b-instruct'
 export async function generate(request,call=fetch) {
   const {task,pages,context,model}=input.parse(request)
   if(!Object.hasOwn(schemas,task)) throw new Error('Unknown study task.')
-  if(/cloud|\//i.test(model) && /cloud/i.test(model)) throw new Error('Choose a locally installed model.')
+  if(/cloud/i.test(model)) throw new Error('Choose a locally installed model.')
   const signal=AbortSignal.timeout(240000)
   const post=(route,body)=>call('http://127.0.0.1:11434/api/'+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal,redirect:'error'})
   const info=await post('show',{model})
@@ -25,6 +25,7 @@ export function localApi(req,res,next) {
   const send=(status,value)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(value))}
   if(req.method!=='POST' || !['127.0.0.1','localhost'].includes((req.headers.host || '').split(':')[0]) || (req.headers.origin && req.headers.origin!=='http://'+req.headers.host) || !req.headers['content-type']?.startsWith('application/json')) return send(403,{error:'Use the local Bachao window.'})
   ;(async()=>{
+    req.setEncoding('utf8')
     let body=''
     for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>100000) return send(413,{error:'Reduce the source selection and retry.'})}
     const result=await generate(JSON.parse(body))
