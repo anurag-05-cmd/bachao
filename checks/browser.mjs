@@ -1,12 +1,16 @@
 import assert from 'node:assert/strict'
 import {chromium} from 'playwright-core'
-import {createServer} from 'vite'
+import {preview} from 'vite'
+import {mkdir} from 'node:fs/promises'
 import {syntheticPdf} from '../tests/fixtures/pdf.js'
-const server=await createServer({server:{host:'127.0.0.1',port:5273,strictPort:false},logLevel:'error'})
+const server=await preview({preview:{host:'127.0.0.1',port:5273,strictPort:false},logLevel:'error'})
 let browser
 try {
- await server.listen()
+
  const url=server.resolvedUrls.local[0]
+ const invalid=await fetch(new URL('/api/generate',url),{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+ assert.equal(invalid.status,400)
+ assert.match((await invalid.json()).error,/Invalid study request/)
  browser=await chromium.launch({channel:process.env.BACHAO_BROWSER || 'msedge',headless:true})
  const page=await browser.newPage({viewport:{width:1280,height:880}})
  const errors=[],external=[]
@@ -14,6 +18,13 @@ try {
  page.on('request',r=>{if(!r.url().startsWith(url)&&/^https?:/.test(r.url()))external.push(r.url())})
  await page.goto(url)
  await page.getByRole('heading',{name:'Your study desk.'}).waitFor()
+ if(process.env.BACHAO_CAPTURE){
+   await mkdir('.cache/qa',{recursive:true})
+   await page.screenshot({path:'.cache/qa/desktop.png'})
+   await page.setViewportSize({width:390,height:844})
+   await page.screenshot({path:'.cache/qa/portrait.png'})
+   await page.setViewportSize({width:1280,height:880})
+ }
  await page.getByRole('button',{name:'90 min',exact:true}).click()
  await page.getByRole('heading',{name:'Deferred topics'}).waitFor()
  await page.getByRole('button',{name:'Start studying'}).click()
@@ -49,10 +60,41 @@ try {
  await page.reload()
  await page.getByRole('button',{name:'Materials',exact:true}).click()
  await page.getByText('Syllabus · 1/2 pages read').waitFor()
+ const notes=page.locator('section').filter({has:page.getByRole('heading',{name:'Notes & slides'})})
+ await notes.getByText('Paste text',{exact:true}).click()
+ await notes.getByLabel('Source name').fill('Synthetic handout')
+ await notes.getByLabel('Source text').fill('A candidate key uniquely identifies a row and is minimal.')
+ await notes.getByRole('button',{name:'Add text'}).click()
+ await page.getByText('Notes & slides · 1/1 pages read').waitFor()
  await page.route('**/api/generate',route=>route.fulfill({status:400,json:{error:'Test fixture: local model unavailable'}}))
  await page.getByRole('button',{name:'Build my study pack'}).click()
  await page.getByRole('alert').filter({hasText:'local model unavailable'}).waitFor()
  assert.equal(await page.getByRole('heading',{name:'Study materials'}).count(),1)
+ await page.unroute('**/api/generate')
+ // Exercise a successful upload independently of model quality, using a labelled transport fixture.
+ let requests=0
+ await page.route('**/api/generate',route=>{
+   requests++
+   const source=route.request().postDataJSON().pages[0]
+   return route.fulfill({json:{subject:'Fixture course',topics:[{title:'Database keys',notes:'A key identifies a row.',points:['Check uniqueness.'],example:'A unique serial number identifies one item.',outline:'Define uniqueness and give an example.',refs:[{page:source.id,quote:'Database keys'}]}]}})
+ })
+ await page.getByRole('button',{name:'Retry analysis'}).click()
+ await page.getByText('Fixture course',{exact:true}).waitFor()
+ await page.getByRole('button',{name:'90 min',exact:true}).click()
+ await page.getByRole('button',{name:'Materials',exact:true}).click()
+ await page.getByRole('button',{name:'Build my study pack'}).click()
+ await page.getByText('Fixture course',{exact:true}).waitFor()
+ assert.equal(requests,1)
+ await page.reload()
+ await page.getByText('Fixture course',{exact:true}).waitFor()
+ await page.getByRole('button',{name:'Materials',exact:true}).click()
+ page.once('dialog',dialog=>dialog.accept())
+ await page.getByRole('button',{name:'Delete all local study data'}).click()
+ await page.getByRole('heading',{name:'Study materials'}).waitFor()
+ await page.waitForFunction(()=>!document.body.textContent.includes('Fixture course'))
+ await page.reload()
+ await page.getByRole('heading',{name:'Study materials'}).waitFor()
+ assert.equal(await page.getByText('Syllabus · 1/2 pages read').count(),0)
  assert.deepEqual(errors,[]);assert.deepEqual(external,[])
- console.log('Edge passed: sample, time switch, scoring, self-check, targeted retry, persistence, portrait bounds, real PDF upload and live failure. No external HTTP requests.')
-} finally {await browser?.close();await server.close()}
+ console.log('Edge passed: sample, time switch, scoring, self-check, targeted retry, persistence, portrait bounds, PDF upload, simulated failure and success, cache reuse, deletion, PYQ insights and practice paper. No external HTTP requests.')
+} finally {await browser?.close();await new Promise(resolve=>server.httpServer.close(resolve))}

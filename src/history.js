@@ -13,6 +13,7 @@ export function paperChunks(pack) {
  }
  return chunks
 }
+// A number counts as a mark only when it occurs at the question boundary.
 const marksAtEnd=/(?:[[(]\s*(\d{1,3})\s*(?:marks?|points?|pts?)?\s*[\])]|\b(\d{1,3})\s*(?:marks?|points?))\s*$/i
 function yearOf(doc) {
  const header=doc.pages[0]?.text.split('\n').slice(0,4).filter(l=>/exam|semester|session|year|paper/i.test(l)&&!/^\s*(?:Q\s*)?\d+[.)]/i.test(l)).join(' ') || ''

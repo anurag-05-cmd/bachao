@@ -5,7 +5,7 @@ export async function digest(text) {
   return Array.from(new Uint8Array(bytes), n => n.toString(16).padStart(2,'0')).join('')
 }
 export async function material(kind, name, pages, original) {
-  const content = pages.map(p => normalize(p.text)).join(' ').trim()
+  const content = normalize(pages.map(p => p.text).join(' '))
   const fingerprint = await digest(content || name)
   return { id: kind + '-' + fingerprint, fingerprint, kind, name, pages, original }
 }

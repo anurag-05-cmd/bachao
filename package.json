@@ -9,7 +9,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "node --test"
+    "start": "vite preview",
+    "test": "node --test tests/*.test.js",
+    "test:browser": "node checks/browser.mjs",
+    "test:ollama": "node checks/ollama.mjs"
   },
   "dependencies": {
     "lucide-react": "0.468.0",
