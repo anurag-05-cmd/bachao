@@ -1,3 +1,4 @@
+import {nextAction} from './quiz.js'
 import React from 'react'
 import { BookOpen, CalendarDays, Check, Clock3, FileStack, Layers, ListChecks, Pencil, Timer } from 'lucide-react'
 import { availableDays, pageIndex, schedule } from './study.js'
@@ -13,7 +14,7 @@ export function Topics({pack,open}) {return <><p className="eyebrow">Study pack<
 function PageSketch({title}) {return <div className="sketch" aria-hidden="true"><div className="sheet back"/><div className="sheet front"><span className="tape"/><b>{title}</b><div className="diagram"><i/><i/><i/></div><div className="ruled"/></div><Pencil className="pencil" size={64} strokeWidth={1.3}/></div>}
 export function Desk({pack,open,update,navigate}) {
  const plan=schedule(pack,pack.settings)
- const next=plan.sessions.find(s=>!pack.done.includes(s.key))
+ const next=nextAction(plan,pack)
  const topic=pack.topics.find(t=>t.id===next?.topic)
  const days=availableDays(pack.settings.date)
  const change=mode=>update({...pack,settings:{...pack.settings,mode}})

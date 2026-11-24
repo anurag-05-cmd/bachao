@@ -1,0 +1,50 @@
+import assert from 'node:assert/strict'
+import {chromium} from 'playwright-core'
+import {createServer} from 'vite'
+import {syntheticPdf} from '../tests/fixtures/pdf.js'
+const server=await createServer({server:{host:'127.0.0.1',port:5273,strictPort:false},logLevel:'error'})
+let browser
+try {
+ await server.listen()
+ const url=server.resolvedUrls.local[0]
+ browser=await chromium.launch({channel:process.env.BACHAO_BROWSER || 'msedge',headless:true})
+ const page=await browser.newPage({viewport:{width:1280,height:880}})
+ const errors=[],external=[]
+ page.on('pageerror',e=>errors.push(e.message))
+ page.on('request',r=>{if(!r.url().startsWith(url)&&/^https?:/.test(r.url()))external.push(r.url())})
+ await page.goto(url)
+ await page.getByRole('heading',{name:'Your study desk.'}).waitFor()
+ await page.getByRole('button',{name:'90 min',exact:true}).click()
+ await page.getByRole('heading',{name:'Deferred topics'}).waitFor()
+ await page.getByRole('button',{name:'Start studying'}).click()
+ await page.getByRole('button',{name:'Quick Check · 3'}).click()
+ await page.getByLabel('Make building part of every key').check()
+ await page.getByLabel('A room determines its building').check()
+ await page.getByRole('textbox',{name:'Outline the decomposition of Booking.'}).fill('Keep Booking and Room.')
+ await page.getByRole('button',{name:'Submit answers'}).click()
+ await page.getByText('1 / 2 correct').waitFor()
+ await page.getByRole('button',{name:'Met the marking points'}).click()
+ await page.getByText('2 / 3 correct').waitFor()
+ await page.getByRole('button',{name:'Retry missed questions (1)'}).click()
+ assert.equal(await page.locator('form legend').count(),1)
+ await page.reload()
+ await page.getByText(/Your last check flagged this topic/).waitFor()
+ await page.getByRole('button',{name:'Revise',exact:true}).click()
+ await page.getByText('2 / 3 correct').waitFor()
+ await page.setViewportSize({width:390,height:844})
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))
+ await page.getByRole('button',{name:'Materials',exact:true}).click()
+ await page.getByLabel('Choose Syllabus PDFs').setInputFiles({name:'synthetic.pdf',mimeType:'application/pdf',buffer:Buffer.from(syntheticPdf())})
+ await page.getByText('Syllabus · 1/2 pages read').waitFor()
+ await page.getByText('synthetic.pdf',{exact:false}).filter({hasText:'pages read'}).last().click()
+ await page.getByText('Database keys',{exact:true}).waitFor()
+ await page.reload()
+ await page.getByRole('button',{name:'Materials',exact:true}).click()
+ await page.getByText('Syllabus · 1/2 pages read').waitFor()
+ await page.route('**/api/generate',route=>route.fulfill({status:400,json:{error:'Test fixture: local model unavailable'}}))
+ await page.getByRole('button',{name:'Build my study pack'}).click()
+ await page.getByRole('alert').filter({hasText:'local model unavailable'}).waitFor()
+ assert.equal(await page.getByRole('heading',{name:'Study materials'}).count(),1)
+ assert.deepEqual(errors,[]);assert.deepEqual(external,[])
+ console.log('Edge passed: sample, time switch, scoring, self-check, targeted retry, persistence, portrait bounds, real PDF upload and live failure. No external HTTP requests.')
+} finally {await browser?.close();await server.close()}

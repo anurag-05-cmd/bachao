@@ -18,5 +18,23 @@ export function validateResult(task,raw,pages) {
     verifyRefs(t.refs,pages)
     if(!t.refs.some(r=>pages.find(p=>p.id===r.page)?.kind==='syllabus')) throw new Error('A topic lacked syllabus evidence. Retry the analysis.')
   }
+  if(task==='quiz') {
+    const seen=new Set()
+    for(const q of result.questions) {
+      verifyRefs(q.refs,pages)
+      const key=normalize(q.prompt).toLowerCase()
+      if(seen.has(key)) throw new Error('Duplicate quiz questions. Retry the test.')
+      seen.add(key)
+      if(q.kind==='mcq' && (q.options.length<2 || new Set(q.options.map(normalize)).size!==q.options.length || q.answer===null || q.answer<0 || q.answer>=q.options.length)) throw new Error('Invalid MCQ answer key. Retry the test.')
+      if(q.kind==='short' && (q.answer!==null || q.options.length)) throw new Error('Invalid short-answer format. Retry the test.')
+    }
+  }
   return result
 }
+const question=z.object({
+  prompt:sentence,kind:z.enum(['mcq','short']),options:z.array(sentence).max(5),
+  answer:z.number().int().nullable(),explanation:sentence,points:z.array(sentence).min(1).max(5),
+  refs:z.array(ref).min(1).max(3)
+})
+schemas.quiz=z.object({questions:z.array(question).max(5)})
+instructions.quiz='Write up to five distinct test questions about the topic named in context, mixing MCQs with short answers. Aim for three usable questions first. Base each answer on cited source material. Return fewer if unsupported. For MCQs provide distinct options and a zero-based answer index. For short answers use empty options, a null answer and specific marking points. Explain each correct answer.'
